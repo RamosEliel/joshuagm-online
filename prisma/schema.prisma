@@ -1,0 +1,177 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Rol {
+  ADMINISTRADOR
+  TESORERO
+  GESTOR_BIENES
+  GM
+}
+
+enum TipoTransaccion {
+  INGRESO
+  GASTO
+}
+
+enum TipoActividad {
+  EVENTO
+  ACTIVIDAD
+}
+
+enum TipoSangre {
+  A_POSITIVO
+  A_NEGATIVO
+  B_POSITIVO
+  B_NEGATIVO
+  AB_POSITIVO
+  AB_NEGATIVO
+  O_POSITIVO
+  O_NEGATIVO
+}
+
+enum EstadoGM {
+  ACTIVO
+  INACTIVO
+  SUSPENDIDO
+}
+
+enum CategoriaBien {
+  ARTICULOS_ACAMPAR
+  EQUIPO_COCINA
+  HERRAMIENTAS
+  MATERIAL_DEPORTIVO
+  UTILES_ESCOLARES
+  EQUIPO_PRIMEROS_AUXILIOS
+  OTROS
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  nombre    String
+  rol       Rol      @default(GM)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GuiaMayor {
+  id                      String      @id @default(cuid())
+  nombres                 String
+  apellidos               String
+  fechaNacimiento         DateTime
+  tipoSangre              TipoSangre?
+  cargo                   String
+  telefono                String
+  edad                    Int
+  participacionesCampamento Int        @default(0)
+  avatarUrl               String?
+  estado                  EstadoGM    @default(ACTIVO)
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
+
+  finanzas                FinanzaGM[]
+  finanzasCuentas         CuentaPendiente[]
+  actividades             ActividadGM[]
+  usosBienesCampamento    UsoBienCampamento[]
+}
+
+model Transaccion {
+  id          String          @id @default(cuid())
+  tipo        TipoTransaccion
+  descripcion String
+  monto       Float
+  fecha       DateTime        @default(now())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model CuentaPendiente {
+  id            String    @id @default(cuid())
+  descripcion   String
+  montoTotal    Float
+  montoReunido  Float     @default(0)
+  estado        String    @default("pendiente")
+  guiaMayorId   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  guiaMayor     GuiaMayor? @relation(fields: [guiaMayorId], references: [id], onDelete: SetNull)
+}
+
+model Bien {
+  id          String        @id @default(cuid())
+  nombre      String
+  categoria   CategoriaBien @default(OTROS)
+  tipo        String        // Subtipo específico
+  cantidad    Int
+  imagenUrl   String?
+  descripcion String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  usosCampamento UsoBienCampamento[]
+}
+
+model Actividad {
+  id          String         @id @default(cuid())
+  tipo        TipoActividad
+  nombre      String
+  descripcion String?
+  fechaInicio DateTime
+  fechaFin    DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  guiasMayores ActividadGM[]
+}
+
+model ActividadGM {
+  id          String    @id @default(cuid())
+  actividadId String
+  guiaMayorId String
+
+  actividad   Actividad @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+  guiaMayor   GuiaMayor @relation(fields: [guiaMayorId], references: [id], onDelete: Cascade)
+
+  @@unique([actividadId, guiaMayorId])
+}
+
+model FinanzaGM {
+  id              String    @id @default(cuid())
+  guiaMayorId     String
+  tipo            String    // Tipo de finanza: "bien", "objeto", "gasto", "ingreso"
+  descripcion     String    // Descripción del bien, objeto o gasto
+  valor           Float
+  pagosRealizados Float     @default(0)
+  fecha           DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  guiaMayor       GuiaMayor @relation(fields: [guiaMayorId], references: [id], onDelete: Cascade)
+}
+
+// Registro de uso de bienes en campamentos
+model UsoBienCampamento {
+  id              String    @id @default(cuid())
+  bienId          String
+  guiaMayorId     String
+  campamentoNum   Int       // Número de campamento (1, 2, 3, etc.)
+  fechaUso        DateTime  @default(now())
+  cantidadUsada   Int       @default(1)
+  observaciones   String?
+  createdAt       DateTime  @default(now())
+
+  bien        Bien      @relation(fields: [bienId], references: [id], onDelete: Cascade)
+  guiaMayor   GuiaMayor @relation(fields: [guiaMayorId], references: [id], onDelete: Cascade)
+
+  @@unique([bienId, guiaMayorId, campamentoNum])
+}

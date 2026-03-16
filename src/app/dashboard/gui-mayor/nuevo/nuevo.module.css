@@ -1,0 +1,73 @@
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.pageHeader {
+  margin-bottom: 32px;
+}
+
+.pageTitle {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+
+.pageSubtitle {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+}
+
+.formCard {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: 32px;
+  box-shadow: var(--shadow-sm);
+}
+
+.errorMessage {
+  background: rgba(211, 47, 47, 0.1);
+  border-left: 4px solid var(--color-error);
+  color: var(--color-error);
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.formGrid .form-group:nth-child(9),
+.formGrid .form-group:nth-child(10) {
+  grid-column: span 2;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 640px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .formGrid .form-group:nth-child(9),
+  .formGrid .form-group:nth-child(10) {
+    grid-column: span 1;
+  }
+
+  .formCard {
+    padding: 24px;
+  }
+}
