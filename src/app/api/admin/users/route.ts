@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
+import { Rol } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 
 const ADMIN_ROLE = 'ADMINISTRADOR';
@@ -52,11 +53,13 @@ export async function POST(request: Request) {
     const email = String(data.email || '').trim().toLowerCase();
     const nombre = String(data.nombre || '').trim();
     const password = String(data.password || '');
-    const rol = String(data.rol || '').trim();
+    const rolInput = String(data.rol || '').trim();
+    const validRoles = Object.values(Rol);
+    const rol = validRoles.includes(rolInput as Rol) ? (rolInput as Rol) : null;
 
     if (!email || !password || !nombre || !rol) {
       return NextResponse.json(
-        { error: 'Datos incompletos' },
+        { error: 'Datos incompletos o rol invalido' },
         { status: 400 }
       );
     }
