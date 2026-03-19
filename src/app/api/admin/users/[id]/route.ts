@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
@@ -10,8 +10,8 @@ function isAdmin(role?: string) {
 }
 
 export async function DELETE(
-  _request: Request,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -20,7 +20,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const userId = params.id;
+    const { id: userId } = await params;
 
     if (!userId) {
       return NextResponse.json(
