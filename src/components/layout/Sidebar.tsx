@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import styles from './Sidebar.module.css';
 import { useState } from 'react';
 
@@ -82,11 +82,19 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M8 12h8"/>
     </svg>
   ),
+  admin: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 2l8 4v6c0 5-3.5 9.5-8 10-4.5-.5-8-5-8-10V6l8-4z"/>
+      <path d="M9 12l2 2 4-4"/>
+    </svg>
+  ),
 };
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [expandedSections, setExpandedSections] = useState<string[]>(['Gestión de Personas', 'Gestión de Recursos']);
+  const isAdmin = session?.user?.rol === 'ADMINISTRADOR';
 
   const toggleSection = (title: string) => {
     setExpandedSections(prev =>
@@ -142,6 +150,36 @@ export default function Sidebar() {
             </ul>
           </div>
         ))}
+        {isAdmin && (
+          <div className={styles.navSection}>
+            <h3
+              className={styles.navSectionTitle}
+              onClick={() => toggleSection('Administración')}
+            >
+              <span className={styles.navTitle}>Administración</span>
+              <svg
+                className={`${styles.chevron} ${expandedSections.includes('Administración') ? styles.open : ''}`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </h3>
+            <ul className={`${styles.navList} ${expandedSections.includes('Administración') ? styles.expanded : ''}`}>
+              <li>
+                <Link
+                  href="/dashboard/administracion/usuarios"
+                  className={`${styles.navLink} ${pathname === '/dashboard/administracion/usuarios' || pathname.startsWith('/dashboard/administracion/usuarios/') ? styles.active : ''}`}
+                >
+                  <span className={styles.navIcon}>{icons.admin}</span>
+                  <span className={styles.navText}>Usuarios</span>
+                </Link>
+              </li>
+            </ul>
+          </div>
+        )}
       </nav>
 
       <div className={styles.sidebarFooter}>
