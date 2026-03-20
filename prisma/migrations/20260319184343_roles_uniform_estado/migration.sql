@@ -11,34 +11,58 @@ DO $$ BEGIN
   END IF;
 END $$;
 
--- Add relation between User and GuiaMayor
-ALTER TABLE "User" ADD COLUMN "guiaMayorId" TEXT;
-ALTER TABLE "User" ADD CONSTRAINT "User_guiaMayorId_key" UNIQUE ("guiaMayorId");
-ALTER TABLE "User" ADD CONSTRAINT "User_guiaMayorId_fkey" FOREIGN KEY ("guiaMayorId") REFERENCES "GuiaMayor"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+-- Add relation between User and GuiaMayor (guarded)
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "guiaMayorId" TEXT;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'User_guiaMayorId_key') THEN
+    ALTER TABLE "User" ADD CONSTRAINT "User_guiaMayorId_key" UNIQUE ("guiaMayorId");
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'User_guiaMayorId_fkey') THEN
+    ALTER TABLE "User" ADD CONSTRAINT "User_guiaMayorId_fkey"
+      FOREIGN KEY ("guiaMayorId") REFERENCES "GuiaMayor"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- Add estado to Transaccion
-ALTER TABLE "Transaccion" ADD COLUMN "estado" "EstadoTransaccion" NOT NULL DEFAULT 'CONFIRMADA';
+ALTER TABLE "Transaccion" ADD COLUMN IF NOT EXISTS "estado" "EstadoTransaccion" NOT NULL DEFAULT 'CONFIRMADA';
 
--- Convert estado on CuentaPendiente to enum
-ALTER TABLE "CuentaPendiente" ADD COLUMN "estado_new" "EstadoCuentaPendiente" NOT NULL DEFAULT 'PENDIENTE';
-UPDATE "CuentaPendiente"
-SET "estado_new" = (
-  CASE
-    WHEN lower("estado") IN ('completado', 'completa', 'pagada', 'pagado') THEN 'PAGADA'
-    WHEN lower("estado") IN ('vencida', 'vencido') THEN 'VENCIDA'
-    WHEN lower("estado") IN ('anulada', 'anulado') THEN 'ANULADA'
-    ELSE 'PENDIENTE'
-  END
-)::"EstadoCuentaPendiente";
-ALTER TABLE "CuentaPendiente" DROP COLUMN "estado";
-ALTER TABLE "CuentaPendiente" RENAME COLUMN "estado_new" TO "estado";
+-- Convert estado on CuentaPendiente to enum (only if estado is text)
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_name = 'CuentaPendiente'
+      AND column_name = 'estado'
+      AND data_type = 'text'
+  ) THEN
+    ALTER TABLE "CuentaPendiente" ADD COLUMN IF NOT EXISTS "estado_new" "EstadoCuentaPendiente" NOT NULL DEFAULT 'PENDIENTE';
+    UPDATE "CuentaPendiente"
+    SET "estado_new" = (
+      CASE
+        WHEN lower("estado") IN ('completado', 'completa', 'pagada', 'pagado') THEN 'PAGADA'
+        WHEN lower("estado") IN ('vencida', 'vencido') THEN 'VENCIDA'
+        WHEN lower("estado") IN ('anulada', 'anulado') THEN 'ANULADA'
+        ELSE 'PENDIENTE'
+      END
+    )::"EstadoCuentaPendiente";
+    ALTER TABLE "CuentaPendiente" DROP COLUMN "estado";
+    ALTER TABLE "CuentaPendiente" RENAME COLUMN "estado_new" TO "estado";
+  END IF;
+END $$;
 
 -- Track who registered usage
-ALTER TABLE "UsoBienCampamento" ADD COLUMN "registradoPorId" TEXT;
-ALTER TABLE "UsoBienCampamento" ADD CONSTRAINT "UsoBienCampamento_registradoPorId_fkey" FOREIGN KEY ("registradoPorId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "UsoBienCampamento" ADD COLUMN IF NOT EXISTS "registradoPorId" TEXT;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'UsoBienCampamento_registradoPorId_fkey') THEN
+    ALTER TABLE "UsoBienCampamento" ADD CONSTRAINT "UsoBienCampamento_registradoPorId_fkey"
+      FOREIGN KEY ("registradoPorId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- Uniform items catalog
-CREATE TABLE "UniformItem" (
+CREATE TABLE IF NOT EXISTS "UniformItem" (
   "id" TEXT NOT NULL,
   "nombre" TEXT NOT NULL,
   "descripcion" TEXT,
@@ -50,7 +74,7 @@ CREATE TABLE "UniformItem" (
   CONSTRAINT "UniformItem_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "UserUniformItem" (
+CREATE TABLE IF NOT EXISTS "UserUniformItem" (
   "id" TEXT NOT NULL,
   "userId" TEXT NOT NULL,
   "itemId" TEXT NOT NULL,
@@ -61,7 +85,18 @@ CREATE TABLE "UserUniformItem" (
   CONSTRAINT "UserUniformItem_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "UserUniformItem_userId_itemId_key" ON "UserUniformItem"("userId", "itemId");
+CREATE UNIQUE INDEX IF NOT EXISTS "UserUniformItem_userId_itemId_key" ON "UserUniformItem"("userId", "itemId");
 
-ALTER TABLE "UserUniformItem" ADD CONSTRAINT "UserUniformItem_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "UserUniformItem" ADD CONSTRAINT "UserUniformItem_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "UniformItem"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'UserUniformItem_userId_fkey') THEN
+    ALTER TABLE "UserUniformItem" ADD CONSTRAINT "UserUniformItem_userId_fkey"
+      FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'UserUniformItem_itemId_fkey') THEN
+    ALTER TABLE "UserUniformItem" ADD CONSTRAINT "UserUniformItem_itemId_fkey"
+      FOREIGN KEY ("itemId") REFERENCES "UniformItem"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
