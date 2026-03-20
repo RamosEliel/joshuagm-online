@@ -1,6 +1,15 @@
--- Create new enums
-CREATE TYPE "EstadoCuentaPendiente" AS ENUM ('PENDIENTE', 'PAGADA', 'VENCIDA', 'ANULADA');
-CREATE TYPE "EstadoTransaccion" AS ENUM ('PENDIENTE', 'CONFIRMADA', 'ANULADA');
+-- Create new enums (guarded for re-run)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'EstadoCuentaPendiente') THEN
+    CREATE TYPE "EstadoCuentaPendiente" AS ENUM ('PENDIENTE', 'PAGADA', 'VENCIDA', 'ANULADA');
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'EstadoTransaccion') THEN
+    CREATE TYPE "EstadoTransaccion" AS ENUM ('PENDIENTE', 'CONFIRMADA', 'ANULADA');
+  END IF;
+END $$;
 
 -- Add relation between User and GuiaMayor
 ALTER TABLE "User" ADD COLUMN "guiaMayorId" TEXT;
