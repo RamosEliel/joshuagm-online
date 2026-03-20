@@ -53,6 +53,33 @@ DO $$ BEGIN
 END $$;
 
 -- Track who registered usage
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='UsoBienCampamento'
+  ) THEN
+    CREATE TABLE "UsoBienCampamento" (
+      "id" TEXT NOT NULL,
+      "bienId" TEXT NOT NULL,
+      "guiaMayorId" TEXT NOT NULL,
+      "campamentoNum" INTEGER NOT NULL,
+      "fechaUso" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "cantidadUsada" INTEGER NOT NULL DEFAULT 1,
+      "observaciones" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+      CONSTRAINT "UsoBienCampamento_pkey" PRIMARY KEY ("id")
+    );
+
+    CREATE UNIQUE INDEX "UsoBienCampamento_bienId_guiaMayorId_campamentoNum_key"
+      ON "UsoBienCampamento"("bienId", "guiaMayorId", "campamentoNum");
+
+    ALTER TABLE "UsoBienCampamento" ADD CONSTRAINT "UsoBienCampamento_bienId_fkey"
+      FOREIGN KEY ("bienId") REFERENCES "Bien"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    ALTER TABLE "UsoBienCampamento" ADD CONSTRAINT "UsoBienCampamento_guiaMayorId_fkey"
+      FOREIGN KEY ("guiaMayorId") REFERENCES "GuiaMayor"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
+
 ALTER TABLE "UsoBienCampamento" ADD COLUMN IF NOT EXISTS "registradoPorId" TEXT;
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'UsoBienCampamento_registradoPorId_fkey') THEN
