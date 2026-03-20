@@ -20,9 +20,16 @@ type UserItem = {
   createdAt: string;
 };
 
+type GuiaMayorItem = {
+  id: string;
+  nombres: string;
+  apellidos: string;
+};
+
 export default function AdminUsuariosPage() {
   const { data: session } = useSession();
   const [users, setUsers] = useState<UserItem[]>([]);
+  const [guias, setGuias] = useState<GuiaMayorItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -30,6 +37,7 @@ export default function AdminUsuariosPage() {
     nombre: '',
     password: '',
     rol: 'GM',
+    guiaMayorId: '',
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -53,12 +61,18 @@ export default function AdminUsuariosPage() {
 
   useEffect(() => {
     loadUsers();
+    fetch('/api/gui-mayor')
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setGuias(Array.isArray(data) ? data : []))
+      .catch(() => setGuias([]));
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
+      ...(name === 'rol' && value !== 'GM' ? { guiaMayorId: '' } : {}),
     }));
   };
 
@@ -80,7 +94,7 @@ export default function AdminUsuariosPage() {
       }
 
       setUsers((prev) => [data, ...prev]);
-      setForm({ email: '', nombre: '', password: '', rol: 'GM' });
+    setForm({ email: '', nombre: '', password: '', rol: 'GM', guiaMayorId: '' });
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Error inesperado');
     } finally {
@@ -176,6 +190,26 @@ export default function AdminUsuariosPage() {
                   ))}
                 </select>
               </div>
+              {form.rol === 'GM' && (
+                <div className="form-group">
+                  <label className="form-label" htmlFor="guiaMayorId">Guía Mayor asociado</label>
+                  <select
+                    id="guiaMayorId"
+                    name="guiaMayorId"
+                    className="form-input"
+                    value={form.guiaMayorId}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Seleccionar GM</option>
+                    {guias.map((gm) => (
+                      <option key={gm.id} value={gm.id}>
+                        {gm.nombres} {gm.apellidos}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <button
                 type="submit"
                 className="btn btn-primary"

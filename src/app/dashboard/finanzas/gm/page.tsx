@@ -1,5 +1,8 @@
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 import styles from './gm.module.css';
 
 async function getFinanzasGM() {
@@ -14,6 +17,14 @@ async function getFinanzasGM() {
 }
 
 export default async function FinanzasGMPage() {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    redirect('/login');
+  }
+  if (!['ADMINISTRADOR', 'TESORERO'].includes(session.user.rol)) {
+    redirect('/dashboard');
+  }
+
   const guiasMayores = await getFinanzasGM();
 
   const formatCurrency = (amount: number) => {

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="140" viewBox="0 0 200 140">
+  <rect x="4" y="4" width="192" height="132" rx="16" fill="#F7F7F7" stroke="#2E7D32" stroke-width="3"/>
+  <circle cx="100" cy="45" r="18" fill="#2E7D32" opacity="0.15"/>
+  <rect x="70" y="70" width="60" height="30" rx="8" fill="#2E7D32" opacity="0.15"/>
+  <text x="100" y="115" font-size="16" font-family="Source Sans 3, Arial, sans-serif" text-anchor="middle" fill="#2E7D32">Panuelo</text>
+</svg>

@@ -1,6 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import styles from './page.module.css';
 
 async function getBienes() {
@@ -20,6 +22,8 @@ const categoriaLabels: Record<string, string> = {
 };
 
 export default async function BienesPage() {
+  const session = await getServerSession(authOptions);
+  const canManage = !!session?.user?.rol && ['ADMINISTRADOR', 'GESTOR_BIENES'].includes(session.user.rol);
   const bienes = await getBienes();
 
   // Agrupar por categoría
@@ -49,13 +53,15 @@ export default async function BienesPage() {
             </svg>
             Uso en Campamentos
           </Link>
-          <Link href="/dashboard/bienes/nuevo" className="btn btn-primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Nuevo Bien
-          </Link>
+          {canManage && (
+            <Link href="/dashboard/bienes/nuevo" className="btn btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Nuevo Bien
+            </Link>
+          )}
         </div>
       </div>
 
@@ -101,20 +107,22 @@ export default async function BienesPage() {
                         </span>
                       </div>
                     </div>
-                    <div className={styles.bienActions}>
-                      <Link
-                        href={`/dashboard/bienes/${bien.id}/editar`}
-                        className={styles.actionBtn}
-                        title="Editar"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                      </Link>
+                      {canManage && (
+                        <div className={styles.bienActions}>
+                          <Link
+                            href={`/dashboard/bienes/${bien.id}/editar`}
+                            className={styles.actionBtn}
+                            title="Editar"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                          </Link>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
           ))}

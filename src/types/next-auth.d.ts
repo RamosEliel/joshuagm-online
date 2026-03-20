@@ -6,6 +6,7 @@ declare module "next-auth" {
       id: string;
       rol: string;
       nombre: string;
+      guiaMayorId?: string | null;
     } & DefaultSession["user"];
   }
 
@@ -14,6 +15,7 @@ declare module "next-auth" {
     email: string;
     nombre: string;
     rol: string;
+    guiaMayorId?: string | null;
   }
 }
 
@@ -22,5 +24,6 @@ declare module "next-auth/jwt" {
     id: string;
     rol: string;
     nombre: string;
+    guiaMayorId?: string | null;
   }
 }

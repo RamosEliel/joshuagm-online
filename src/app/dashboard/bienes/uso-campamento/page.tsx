@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import styles from './uso-campamento.module.css';
 
 interface Bien {
@@ -20,6 +20,7 @@ interface UsoBien {
   id: string;
   bien: Bien;
   guiaMayor: GuiaMayor;
+  registradoPorId?: string | null;
   campamentoNum: number;
   fechaUso: string;
   cantidadUsada: number;
@@ -27,6 +28,9 @@ interface UsoBien {
 }
 
 export default function UsoCampamentoPage() {
+  const { data: session } = useSession();
+  const isGM = session?.user?.rol === 'GM';
+  const canManageAll = session?.user?.rol && ['ADMINISTRADOR', 'GESTOR_BIENES'].includes(session.user.rol);
   const [usos, setUsos] = useState<UsoBien[]>([]);
   const [bienes, setBienes] = useState<Bien[]>([]);
   const [guias, setGuias] = useState<GuiaMayor[]>([]);
@@ -37,6 +41,7 @@ export default function UsoCampamentoPage() {
 
   // Formulario
   const [showForm, setShowForm] = useState(false);
+  const [editingUso, setEditingUso] = useState<UsoBien | null>(null);
   const [formData, setFormData] = useState({
     bienId: '',
     guiaMayorId: '',
@@ -48,6 +53,12 @@ export default function UsoCampamentoPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (isGM && session?.user?.guiaMayorId) {
+      setFormData((prev) => ({ ...prev, guiaMayorId: session.user.guiaMayorId || '' }));
+    }
+  }, [isGM, session?.user?.guiaMayorId]);
 
   const fetchData = async () => {
     try {
@@ -81,8 +92,14 @@ export default function UsoCampamentoPage() {
     e.preventDefault();
 
     try {
-      const response = await fetch('/api/bienes/uso-campamento', {
-        method: 'POST',
+      if (isGM && !formData.guiaMayorId) {
+        throw new Error('Tu usuario no tiene un Guía Mayor asociado');
+      }
+      const targetUrl = editingUso
+        ? `/api/bienes/uso-campamento/${editingUso.id}`
+        : '/api/bienes/uso-campamento';
+      const response = await fetch(targetUrl, {
+        method: editingUso ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
@@ -94,16 +111,29 @@ export default function UsoCampamentoPage() {
 
       setFormData({
         bienId: '',
-        guiaMayorId: '',
+        guiaMayorId: isGM ? session?.user?.guiaMayorId || '' : '',
         campamentoNum: '',
         cantidadUsada: '1',
         observaciones: '',
       });
+      setEditingUso(null);
       setShowForm(false);
       fetchData();
     } catch (err: any) {
       setError(err.message);
     }
+  };
+
+  const startEdit = (uso: UsoBien) => {
+    setEditingUso(uso);
+    setFormData({
+      bienId: uso.bien.id,
+      guiaMayorId: uso.guiaMayor.id,
+      campamentoNum: uso.campamentoNum.toString(),
+      cantidadUsada: uso.cantidadUsada.toString(),
+      observaciones: uso.observaciones || '',
+    });
+    setShowForm(true);
   };
 
   const usosFiltrados = usos.filter((uso) => {
@@ -155,7 +185,7 @@ export default function UsoCampamentoPage() {
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          Registrar Uso
+          {editingUso ? 'Editar Uso' : 'Registrar Uso'}
         </button>
       </div>
 
@@ -188,22 +218,24 @@ export default function UsoCampamentoPage() {
                 </select>
               </div>
 
-              <div className={styles.formGroup}>
-                <label className={styles.label}>Guía Mayor *</label>
-                <select
-                  className={styles.select}
-                  value={formData.guiaMayorId}
-                  onChange={(e) => setFormData({ ...formData, guiaMayorId: e.target.value })}
-                  required
-                >
-                  <option value="">Seleccionar GM</option>
-                  {guias.map((gm) => (
-                    <option key={gm.id} value={gm.id}>
-                      {gm.nombres} {gm.apellidos}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {!isGM && (
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Guía Mayor *</label>
+                  <select
+                    className={styles.select}
+                    value={formData.guiaMayorId}
+                    onChange={(e) => setFormData({ ...formData, guiaMayorId: e.target.value })}
+                    required
+                  >
+                    <option value="">Seleccionar GM</option>
+                    {guias.map((gm) => (
+                      <option key={gm.id} value={gm.id}>
+                        {gm.nombres} {gm.apellidos}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className={styles.formGroup}>
                 <label className={styles.label}>N° Campamento *</label>
@@ -246,7 +278,7 @@ export default function UsoCampamentoPage() {
                 Cancelar
               </button>
               <button type="submit" className="btn btn-primary">
-                Guardar Registro
+                {editingUso ? 'Guardar Cambios' : 'Guardar Registro'}
               </button>
             </div>
           </form>
@@ -268,21 +300,23 @@ export default function UsoCampamentoPage() {
           </select>
         </div>
 
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Filtrar por GM:</label>
-          <select
-            className={styles.filterSelect}
-            value={filtroGM}
-            onChange={(e) => setFiltroGM(e.target.value)}
-          >
-            <option value="">Todos</option>
-            {guias.map((gm) => (
-              <option key={gm.id} value={gm.id}>
-                {gm.nombres} {gm.apellidos}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!isGM && (
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>Filtrar por GM:</label>
+            <select
+              className={styles.filterSelect}
+              value={filtroGM}
+              onChange={(e) => setFiltroGM(e.target.value)}
+            >
+              <option value="">Todos</option>
+              {guias.map((gm) => (
+                <option key={gm.id} value={gm.id}>
+                  {gm.nombres} {gm.apellidos}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {usosFiltrados.length === 0 ? (
@@ -311,6 +345,7 @@ export default function UsoCampamentoPage() {
                 <th>Cantidad</th>
                 <th>Fecha</th>
                 <th>Observaciones</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -331,6 +366,16 @@ export default function UsoCampamentoPage() {
                   <td>{uso.cantidadUsada}</td>
                   <td>{new Date(uso.fechaUso).toLocaleDateString('es-CO')}</td>
                   <td>{uso.observaciones || '-'}</td>
+                  <td>
+                    {(canManageAll || (isGM && uso.registradoPorId === session?.user?.id)) && (
+                      <button
+                        className={styles.editBtn}
+                        onClick={() => startEdit(uso)}
+                      >
+                        Editar
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

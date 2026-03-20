@@ -6,31 +6,6 @@ import { signOut, useSession } from 'next-auth/react';
 import styles from './Sidebar.module.css';
 import { useState } from 'react';
 
-const menuItems = [
-  {
-    title: 'Principal',
-    items: [
-      { name: 'Dashboard', href: '/dashboard', icon: 'dashboard' },
-    ]
-  },
-  {
-    title: 'Gestión de Personas',
-    items: [
-      { name: 'Guías Mayores', href: '/dashboard/gui-mayor', icon: 'people' },
-      { name: 'Finanzas GM', href: '/dashboard/finanzas/gm', icon: 'account' },
-    ]
-  },
-  {
-    title: 'Gestión de Recursos',
-    items: [
-      { name: 'Finanzas', href: '/dashboard/finanzas', icon: 'finance' },
-      { name: 'Bienes', href: '/dashboard/bienes', icon: 'inventory' },
-      { name: 'Uso en Campamentos', href: '/dashboard/bienes/uso-campamento', icon: 'camping' },
-      { name: 'Actividades', href: '/dashboard/eventos', icon: 'event' },
-    ]
-  }
-];
-
 const icons: Record<string, React.ReactNode> = {
   dashboard: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -88,6 +63,19 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M9 12l2 2 4-4"/>
     </svg>
   ),
+  uniform: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M16 4l-4 4-4-4"/>
+      <path d="M8 4h8l2 4v12H6V8z"/>
+    </svg>
+  ),
+  wallet: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M3 7h18v10H3z"/>
+      <path d="M16 12h3"/>
+      <path d="M3 7l2-3h16l2 3"/>
+    </svg>
+  ),
 };
 
 export default function Sidebar() {
@@ -95,6 +83,8 @@ export default function Sidebar() {
   const { data: session } = useSession();
   const [expandedSections, setExpandedSections] = useState<string[]>(['Gestión de Personas', 'Gestión de Recursos']);
   const isAdmin = session?.user?.rol === 'ADMINISTRADOR';
+  const isTesorero = session?.user?.rol === 'TESORERO';
+  const isGM = session?.user?.rol === 'GM';
 
   const toggleSection = (title: string) => {
     setExpandedSections(prev =>
@@ -118,7 +108,32 @@ export default function Sidebar() {
       </div>
 
       <nav className={styles.nav}>
-        {menuItems.map((section) => (
+        {[
+          {
+            title: 'Principal',
+            items: [
+              { name: 'Dashboard', href: '/dashboard', icon: 'dashboard' },
+            ],
+          },
+          {
+            title: 'Gestión de Personas',
+            items: [
+              { name: 'Guías Mayores', href: '/dashboard/gui-mayor', icon: 'people' },
+              ...(isAdmin || isTesorero ? [{ name: 'Finanzas GM', href: '/dashboard/finanzas/gm', icon: 'account' }] : []),
+            ],
+          },
+          {
+            title: 'Gestión de Recursos',
+            items: [
+              ...(isAdmin || isTesorero ? [{ name: 'Finanzas', href: '/dashboard/finanzas', icon: 'finance' }] : []),
+              ...(isGM ? [{ name: 'Mis Finanzas', href: '/dashboard/finanzas/mis-finanzas', icon: 'wallet' }] : []),
+              { name: 'Bienes', href: '/dashboard/bienes', icon: 'inventory' },
+              { name: 'Uso en Campamentos', href: '/dashboard/bienes/uso-campamento', icon: 'camping' },
+              { name: 'Actividades', href: '/dashboard/eventos', icon: 'event' },
+              ...(isGM ? [{ name: 'Uniforme de Gala', href: '/dashboard/uniforme', icon: 'uniform' }] : []),
+            ],
+          },
+        ].map((section) => (
           <div key={section.title} className={styles.navSection}>
             <h3
               className={styles.navSectionTitle}

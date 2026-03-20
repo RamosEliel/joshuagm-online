@@ -21,7 +21,17 @@ export async function GET(request: Request) {
     const campamentoNum = searchParams.get('campamentoNum');
 
     const where: any = {};
-    if (guiaMayorId) where.guiaMayorId = guiaMayorId;
+    const isGM = session.user.rol === 'GM';
+    if (isGM) {
+      if (!session.user.guiaMayorId) {
+        return NextResponse.json(
+          { error: 'Guía Mayor no asociado al usuario' },
+          { status: 400 }
+        );
+      }
+      where.guiaMayorId = session.user.guiaMayorId;
+    }
+    if (!isGM && guiaMayorId) where.guiaMayorId = guiaMayorId;
     if (bienId) where.bienId = bienId;
     if (campamentoNum) where.campamentoNum = parseInt(campamentoNum);
 
@@ -55,7 +65,7 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || !['ADMINISTRADOR', 'GESTOR_BIENES'].includes(session.user.rol)) {
+    if (!session || !['ADMINISTRADOR', 'GESTOR_BIENES', 'GM'].includes(session.user.rol)) {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
@@ -96,6 +106,15 @@ export async function POST(request: Request) {
       );
     }
 
+    if (session.user.rol === 'GM') {
+      if (!session.user.guiaMayorId || session.user.guiaMayorId !== data.guiaMayorId) {
+        return NextResponse.json(
+          { error: 'Solo puedes registrar usos para tu propio registro' },
+          { status: 403 }
+        );
+      }
+    }
+
     // Crear el registro de uso
     const uso = await prisma.usoBienCampamento.create({
       data: {
@@ -105,6 +124,7 @@ export async function POST(request: Request) {
         cantidadUsada: parseInt(data.cantidadUsada) || 1,
         observaciones: data.observaciones || null,
         fechaUso: data.fechaUso ? new Date(data.fechaUso) : new Date(),
+        registradoPorId: session.user.id,
       },
       include: {
         bien: true,

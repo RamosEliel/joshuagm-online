@@ -1,5 +1,8 @@
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 import styles from './page.module.css';
 
 async function getFinanzasData() {
@@ -12,16 +15,20 @@ async function getFinanzasData() {
     }),
   ]);
 
-  const ingresos = transacciones
+  const transaccionesValidas = transacciones.filter((t) => t.estado !== 'ANULADA');
+  const transaccionesConfirmadas = transaccionesValidas.filter((t) => t.estado === 'CONFIRMADA');
+
+  const ingresos = transaccionesConfirmadas
     .filter(t => t.tipo === 'INGRESO')
     .reduce((sum, t) => sum + t.monto, 0);
-  const gastos = transacciones
+  const gastos = transaccionesConfirmadas
     .filter(t => t.tipo === 'GASTO')
     .reduce((sum, t) => sum + t.monto, 0);
   const presupuesto = ingresos - gastos;
 
-  const montoReunidoTotal = cuentas.reduce((sum, c) => sum + c.montoReunido, 0);
-  const montoTotalPendiente = cuentas.reduce((sum, c) => sum + c.montoTotal, 0);
+  const cuentasActivas = cuentas.filter((c) => c.estado !== 'ANULADA');
+  const montoReunidoTotal = cuentasActivas.reduce((sum, c) => sum + c.montoReunido, 0);
+  const montoTotalPendiente = cuentasActivas.reduce((sum, c) => sum + c.montoTotal, 0);
 
   return {
     transacciones,
@@ -35,6 +42,17 @@ async function getFinanzasData() {
 }
 
 export default async function FinanzasPage() {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    redirect('/login');
+  }
+  if (session.user.rol === 'GM') {
+    redirect('/dashboard/finanzas/mis-finanzas');
+  }
+  if (!['ADMINISTRADOR', 'TESORERO'].includes(session.user.rol)) {
+    redirect('/dashboard');
+  }
+
   const data = await getFinanzasData();
 
   const formatCurrency = (amount: number) => {
@@ -148,6 +166,7 @@ export default async function FinanzasPage() {
                   <th>Fecha</th>
                   <th>Tipo</th>
                   <th>Descripcion</th>
+                  <th>Estado</th>
                   <th>Monto</th>
                 </tr>
               </thead>
@@ -161,6 +180,21 @@ export default async function FinanzasPage() {
                       </span>
                     </td>
                     <td>{t.descripcion}</td>
+                    <td>
+                      <span className={`badge ${
+                        t.estado === 'CONFIRMADA'
+                          ? 'badge-success'
+                          : t.estado === 'PENDIENTE'
+                          ? 'badge-warning'
+                          : 'badge-error'
+                      }`}>
+                        {t.estado === 'CONFIRMADA'
+                          ? 'Confirmada'
+                          : t.estado === 'PENDIENTE'
+                          ? 'Pendiente'
+                          : 'Anulada'}
+                      </span>
+                    </td>
                     <td className={t.tipo === 'INGRESO' ? styles.amountPositive : styles.amountNegative}>
                       {t.tipo === 'INGRESO' ? '+' : '-'}{formatCurrency(t.monto)}
                     </td>
@@ -214,8 +248,22 @@ export default async function FinanzasPage() {
                         <span className={styles.progressText}>{progreso.toFixed(1)}%</span>
                       </td>
                       <td>
-                        <span className={`badge ${progreso >= 100 ? 'badge-success' : 'badge-warning'}`}>
-                          {progreso >= 100 ? 'Completado' : 'Pendiente'}
+                        <span className={`badge ${
+                          c.estado === 'PAGADA'
+                            ? 'badge-success'
+                            : c.estado === 'PENDIENTE'
+                            ? 'badge-warning'
+                            : c.estado === 'VENCIDA'
+                            ? 'badge-error'
+                            : 'badge-info'
+                        }`}>
+                          {c.estado === 'PAGADA'
+                            ? 'Pagada'
+                            : c.estado === 'PENDIENTE'
+                            ? 'Pendiente'
+                            : c.estado === 'VENCIDA'
+                            ? 'Vencida'
+                            : 'Anulada'}
                         </span>
                       </td>
                     </tr>

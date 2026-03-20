@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
 import RequireRole from '@/components/RequireRole';
@@ -9,13 +9,23 @@ export default function NuevaCuentaPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [guias, setGuias] = useState<{ id: string; nombres: string; apellidos: string }[]>([]);
   const [formData, setFormData] = useState({
     descripcion: '',
     montoTotal: '',
     montoReunido: '0',
+    estado: 'PENDIENTE',
+    guiaMayorId: '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  useEffect(() => {
+    fetch('/api/gui-mayor')
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setGuias(Array.isArray(data) ? data : []))
+      .catch(() => setGuias([]));
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -110,6 +120,41 @@ export default function NuevaCuentaPage() {
               step="100"
               placeholder="Monto recopilado hasta la fecha"
             />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="estado">Estado *</label>
+            <select
+              id="estado"
+              name="estado"
+              className="form-input"
+              value={formData.estado}
+              onChange={handleChange}
+              required
+            >
+              <option value="PENDIENTE">Pendiente</option>
+              <option value="PAGADA">Pagada</option>
+              <option value="VENCIDA">Vencida</option>
+              <option value="ANULADA">Anulada</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="guiaMayorId">Guía Mayor (opcional)</label>
+            <select
+              id="guiaMayorId"
+              name="guiaMayorId"
+              className="form-input"
+              value={formData.guiaMayorId}
+              onChange={handleChange}
+            >
+              <option value="">Deuda del club (general)</option>
+              {guias.map((gm) => (
+                <option key={gm.id} value={gm.id}>
+                  {gm.nombres} {gm.apellidos}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className={styles.formActions}>

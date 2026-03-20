@@ -76,9 +76,9 @@ export async function PUT(
     const data = await request.json();
 
     // Validar datos obligatorios
-    if (!data.nombre || !data.tipo || data.cantidad === undefined) {
+    if (!data.nombre || !data.tipo || data.cantidad === undefined || !data.descripcion || !data.imagenUrl) {
       return NextResponse.json(
-        { error: 'Nombre, tipo y cantidad son obligatorios' },
+        { error: 'Nombre, tipo, cantidad, descripción e imagen son obligatorios' },
         { status: 400 }
       );
     }
@@ -89,8 +89,8 @@ export async function PUT(
         nombre: data.nombre.trim(),
         tipo: data.tipo.trim(),
         cantidad: parseInt(data.cantidad, 10),
-        imagenUrl: data.imagenUrl?.trim() || null,
-        descripcion: data.descripcion?.trim() || null,
+        imagenUrl: data.imagenUrl?.trim(),
+        descripcion: data.descripcion?.trim(),
       },
     });
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { EstadoTransaccion } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
@@ -57,12 +58,18 @@ export async function POST(request: Request) {
       );
     }
 
+    const estadoInput = data.estado ? String(data.estado).trim() : '';
+    const estado = Object.values(EstadoTransaccion).includes(estadoInput as EstadoTransaccion)
+      ? (estadoInput as EstadoTransaccion)
+      : EstadoTransaccion.CONFIRMADA;
+
     const transaccion = await prisma.transaccion.create({
       data: {
         tipo: data.tipo,
         descripcion: data.descripcion.trim(),
         monto: parseFloat(data.monto),
         fecha: data.fecha ? new Date(data.fecha) : new Date(),
+        estado,
       },
     });
 

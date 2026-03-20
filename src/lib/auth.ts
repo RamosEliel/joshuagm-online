@@ -38,6 +38,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           nombre: user.nombre,
           rol: user.rol,
+          guiaMayorId: user.guiaMayorId,
         };
       },
     }),
@@ -48,6 +49,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.rol = user.rol;
         token.nombre = user.nombre;
+        token.guiaMayorId = user.guiaMayorId ?? null;
       }
       return token;
     },
@@ -56,6 +58,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.rol = token.rol as string;
         session.user.nombre = token.nombre as string;
+        session.user.guiaMayorId = (token.guiaMayorId as string) ?? null;
       }
       return session;
     },

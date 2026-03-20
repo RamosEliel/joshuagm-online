@@ -170,7 +170,7 @@ export default function NuevoBienPage() {
               </div>
 
               <div className="form-group">
-                <label className="form-label" htmlFor="imagenUrl">URL de Imagen</label>
+                <label className="form-label" htmlFor="imagenUrl">URL de Imagen *</label>
                 <input
                   id="imagenUrl"
                   name="imagenUrl"
@@ -178,13 +178,14 @@ export default function NuevoBienPage() {
                   className="form-input"
                   value={formData.imagenUrl}
                   onChange={handleChange}
+                  required
                   placeholder="https://ejemplo.com/imagen.jpg"
                 />
               </div>
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="descripcion">Descripción</label>
+              <label className="form-label" htmlFor="descripcion">Descripción *</label>
               <textarea
                 id="descripcion"
                 name="descripcion"
@@ -192,6 +193,7 @@ export default function NuevoBienPage() {
                 value={formData.descripcion}
                 onChange={handleChange}
                 rows={3}
+                required
                 placeholder="Descripción opcional del bien"
               />
             </div>

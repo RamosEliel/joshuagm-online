@@ -172,7 +172,7 @@ export default function EditarBienPage({ params }: { params: Promise<{ id: strin
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="imagenUrl">URL de Imagen</label>
+              <label className="form-label" htmlFor="imagenUrl">URL de Imagen *</label>
               <input
                 id="imagenUrl"
                 name="imagenUrl"
@@ -180,13 +180,14 @@ export default function EditarBienPage({ params }: { params: Promise<{ id: strin
                 className="form-input"
                 value={formData.imagenUrl}
                 onChange={handleChange}
+                required
                 placeholder="https://ejemplo.com/imagen.jpg"
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="descripcion">Descripcion</label>
+            <label className="form-label" htmlFor="descripcion">Descripcion *</label>
             <textarea
               id="descripcion"
               name="descripcion"
@@ -194,7 +195,8 @@ export default function EditarBienPage({ params }: { params: Promise<{ id: strin
               value={formData.descripcion}
               onChange={handleChange}
               rows={3}
-              placeholder="Descripcion opcional del bien"
+              required
+              placeholder="Descripcion del bien"
             />
           </div>
 

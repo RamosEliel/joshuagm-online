@@ -54,6 +54,7 @@ export async function POST(request: Request) {
     const nombre = String(data.nombre || '').trim();
     const password = String(data.password || '');
     const rolInput = String(data.rol || '').trim();
+    const guiaMayorId = data.guiaMayorId ? String(data.guiaMayorId).trim() : null;
     const validRoles = Object.values(Rol);
     const rol = validRoles.includes(rolInput as Rol) ? (rolInput as Rol) : null;
 
@@ -62,6 +63,26 @@ export async function POST(request: Request) {
         { error: 'Datos incompletos o rol invalido' },
         { status: 400 }
       );
+    }
+
+    if (rol === Rol.GM && !guiaMayorId) {
+      return NextResponse.json(
+        { error: 'Para rol GM debes asignar un Guía Mayor' },
+        { status: 400 }
+      );
+    }
+
+    if (guiaMayorId) {
+      const gmExists = await prisma.guiaMayor.findUnique({
+        where: { id: guiaMayorId },
+        select: { id: true },
+      });
+      if (!gmExists) {
+        return NextResponse.json(
+          { error: 'El Guía Mayor seleccionado no existe' },
+          { status: 400 }
+        );
+      }
     }
 
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -80,6 +101,7 @@ export async function POST(request: Request) {
         nombre,
         password: hashedPassword,
         rol,
+        guiaMayorId,
       },
       select: {
         id: true,

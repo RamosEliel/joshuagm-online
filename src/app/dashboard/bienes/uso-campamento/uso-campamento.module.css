@@ -283,3 +283,18 @@
   font-weight: 700;
   color: #1a1a2e;
 }
+
+.editBtn {
+  background: transparent;
+  border: 1px solid #2563eb;
+  color: #2563eb;
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.4rem;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.editBtn:hover {
+  background: #2563eb;
+  color: white;
+}

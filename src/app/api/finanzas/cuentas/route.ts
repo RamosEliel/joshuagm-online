@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { EstadoCuentaPendiente } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
@@ -69,12 +70,21 @@ export async function POST(request: Request) {
       );
     }
 
+    const estadoInput = data.estado ? String(data.estado).trim() : '';
+    const estadoFromInput = Object.values(EstadoCuentaPendiente).includes(estadoInput as EstadoCuentaPendiente)
+      ? (estadoInput as EstadoCuentaPendiente)
+      : null;
+    const estadoCalculado = montoReunido >= parseFloat(data.montoTotal)
+      ? EstadoCuentaPendiente.PAGADA
+      : EstadoCuentaPendiente.PENDIENTE;
+    const estadoFinal = estadoFromInput ?? estadoCalculado;
+
     const cuenta = await prisma.cuentaPendiente.create({
       data: {
         descripcion: data.descripcion.trim(),
         montoTotal: parseFloat(data.montoTotal),
         montoReunido: montoReunido,
-        estado: montoReunido >= parseFloat(data.montoTotal) ? 'completado' : 'pendiente',
+        estado: estadoFinal,
         guiaMayorId: data.guiaMayorId || null,
       },
     });

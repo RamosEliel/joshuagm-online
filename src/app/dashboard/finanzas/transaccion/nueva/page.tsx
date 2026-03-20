@@ -14,6 +14,7 @@ export default function NuevaTransaccionPage() {
     descripcion: '',
     monto: '',
     fecha: new Date().toISOString().split('T')[0],
+    estado: 'CONFIRMADA',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -80,6 +81,22 @@ export default function NuevaTransaccionPage() {
             >
               <option value="INGRESO">Ingreso</option>
               <option value="GASTO">Gasto</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="estado">Estado *</label>
+            <select
+              id="estado"
+              name="estado"
+              className="form-input"
+              value={formData.estado}
+              onChange={handleChange}
+              required
+            >
+              <option value="CONFIRMADA">Confirmada</option>
+              <option value="PENDIENTE">Pendiente</option>
+              <option value="ANULADA">Anulada</option>
             </select>
           </div>
 

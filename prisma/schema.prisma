@@ -43,6 +43,19 @@ enum EstadoGM {
   SUSPENDIDO
 }
 
+enum EstadoCuentaPendiente {
+  PENDIENTE
+  PAGADA
+  VENCIDA
+  ANULADA
+}
+
+enum EstadoTransaccion {
+  PENDIENTE
+  CONFIRMADA
+  ANULADA
+}
+
 enum CategoriaBien {
   ARTICULOS_ACAMPAR
   EQUIPO_COCINA
@@ -54,13 +67,18 @@ enum CategoriaBien {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  nombre    String
-  rol       Rol      @default(GM)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  nombre      String
+  rol         Rol      @default(GM)
+  guiaMayorId String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  guiaMayor   GuiaMayor? @relation("GuiaMayorUser", fields: [guiaMayorId], references: [id], onDelete: SetNull)
+  uniformes   UserUniformItem[]
+  usosBienes  UsoBienCampamento[] @relation("UsoBienRegistradoPor")
 }
 
 model GuiaMayor {
@@ -82,6 +100,7 @@ model GuiaMayor {
   finanzasCuentas         CuentaPendiente[]
   actividades             ActividadGM[]
   usosBienesCampamento    UsoBienCampamento[]
+  user                    User? @relation("GuiaMayorUser")
 }
 
 model Transaccion {
@@ -90,6 +109,7 @@ model Transaccion {
   descripcion String
   monto       Float
   fecha       DateTime        @default(now())
+  estado      EstadoTransaccion @default(CONFIRMADA)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 }
@@ -99,7 +119,7 @@ model CuentaPendiente {
   descripcion   String
   montoTotal    Float
   montoReunido  Float     @default(0)
-  estado        String    @default("pendiente")
+  estado        EstadoCuentaPendiente @default(PENDIENTE)
   guiaMayorId   String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -164,6 +184,7 @@ model UsoBienCampamento {
   id              String    @id @default(cuid())
   bienId          String
   guiaMayorId     String
+  registradoPorId String?
   campamentoNum   Int       // Número de campamento (1, 2, 3, etc.)
   fechaUso        DateTime  @default(now())
   cantidadUsada   Int       @default(1)
@@ -172,6 +193,33 @@ model UsoBienCampamento {
 
   bien        Bien      @relation(fields: [bienId], references: [id], onDelete: Cascade)
   guiaMayor   GuiaMayor @relation(fields: [guiaMayorId], references: [id], onDelete: Cascade)
+  registradoPor User?   @relation("UsoBienRegistradoPor", fields: [registradoPorId], references: [id], onDelete: SetNull)
 
   @@unique([bienId, guiaMayorId, campamentoNum])
+}
+
+model UniformItem {
+  id          String   @id @default(cuid())
+  nombre      String
+  descripcion String?
+  imagenUrl   String
+  orden       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userItems   UserUniformItem[]
+}
+
+model UserUniformItem {
+  id         String   @id @default(cuid())
+  userId     String
+  itemId     String
+  adquirido  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item UniformItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
 }

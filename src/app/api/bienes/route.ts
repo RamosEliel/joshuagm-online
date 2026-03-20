@@ -40,6 +40,15 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json();
+    const descripcion = String(data.descripcion || '').trim();
+    const imagenUrl = String(data.imagenUrl || '').trim();
+
+    if (!descripcion || !imagenUrl) {
+      return NextResponse.json(
+        { error: 'Descripción e imagen son obligatorias' },
+        { status: 400 }
+      );
+    }
 
     const bien = await prisma.bien.create({
       data: {
@@ -47,8 +56,8 @@ export async function POST(request: Request) {
         categoria: data.categoria || 'OTROS',
         tipo: data.tipo,
         cantidad: parseInt(data.cantidad),
-        imagenUrl: data.imagenUrl || null,
-        descripcion: data.descripcion || null,
+        imagenUrl,
+        descripcion,
       },
     });
 

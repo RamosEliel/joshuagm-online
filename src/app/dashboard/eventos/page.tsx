@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import styles from './eventos.module.css';
 
 interface GuiaMayor {
@@ -24,6 +25,8 @@ interface Actividad {
 }
 
 export default function EventosPage() {
+  const { data: session } = useSession();
+  const canCreate = session?.user?.rol && ['ADMINISTRADOR', 'TESORERO'].includes(session.user.rol);
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -91,13 +94,15 @@ export default function EventosPage() {
           <h1 className={styles.pageTitle}>Eventos y Actividades</h1>
           <p className={styles.pageSubtitle}>Gestión de compromisos del club</p>
         </div>
-        <Link href="/dashboard/eventos/nuevo" className="btn btn-primary">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Nuevo Evento
-        </Link>
+        {canCreate && (
+          <Link href="/dashboard/eventos/nuevo" className="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Nuevo Evento
+          </Link>
+        )}
       </div>
 
       {actividades.length === 0 ? (
@@ -112,9 +117,11 @@ export default function EventosPage() {
           </div>
           <h3 className={styles.emptyTitle}>No hay eventos registrados</h3>
           <p className={styles.emptyText}>Comienza creando el primer evento o actividad</p>
-          <Link href="/dashboard/eventos/nuevo" className="btn btn-primary">
-            Crear Evento
-          </Link>
+          {canCreate && (
+            <Link href="/dashboard/eventos/nuevo" className="btn btn-primary">
+              Crear Evento
+            </Link>
+          )}
         </div>
       ) : (
         <div className={styles.actividadesGrid}>
