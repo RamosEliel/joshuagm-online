@@ -13,12 +13,14 @@ ALTER TABLE "Transaccion" ADD COLUMN "estado" "EstadoTransaccion" NOT NULL DEFAU
 -- Convert estado on CuentaPendiente to enum
 ALTER TABLE "CuentaPendiente" ADD COLUMN "estado_new" "EstadoCuentaPendiente" NOT NULL DEFAULT 'PENDIENTE';
 UPDATE "CuentaPendiente"
-SET "estado_new" = CASE
-  WHEN lower("estado") IN ('completado', 'completa', 'pagada', 'pagado') THEN 'PAGADA'
-  WHEN lower("estado") IN ('vencida', 'vencido') THEN 'VENCIDA'
-  WHEN lower("estado") IN ('anulada', 'anulado') THEN 'ANULADA'
-  ELSE 'PENDIENTE'
-END;
+SET "estado_new" = (
+  CASE
+    WHEN lower("estado") IN ('completado', 'completa', 'pagada', 'pagado') THEN 'PAGADA'
+    WHEN lower("estado") IN ('vencida', 'vencido') THEN 'VENCIDA'
+    WHEN lower("estado") IN ('anulada', 'anulado') THEN 'ANULADA'
+    ELSE 'PENDIENTE'
+  END
+)::"EstadoCuentaPendiente";
 ALTER TABLE "CuentaPendiente" DROP COLUMN "estado";
 ALTER TABLE "CuentaPendiente" RENAME COLUMN "estado_new" TO "estado";
 
